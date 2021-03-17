@@ -1,0 +1,110 @@
+{% from "macros.jinja" import response_tab_content %}
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Documentation Page - {{ current_resource.name | replace('_', ' ') | title }}</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/endpoints.css') }}">
+		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+	</head>
+	<body>
+		<div id="page-content">
+			<header>
+				<nav>
+					<a href="{{ url_for('endpoint_handler.doc_hub') }}">/index</a>
+					{% for resource in all_resources %}
+						{% if resource != current_resource.name %}
+					<a href="{{ url_for('endpoint_handler.doc_page', resource=resource) }}">/{{ resource }}</a>
+						{% endif %}
+					{% endfor %}
+				</nav>
+			</header>
+			<div id="page-navigation">
+				<ul>
+					{% for endpoint in current_resource.endpoints %}
+					<li class="nav-link"><a href="#{{endpoint.name}}" data-nav-target="{{endpoint.name}}">{{ endpoint.title }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+			<div id="schemas">
+				{% for endpoint in current_resource.endpoints %}
+				<div id="{{ endpoint.name }}" class="schema">
+					<div class="schema-header">
+						<div class="method method-{{endpoint.method | lower}}">
+							<span>{{ endpoint.method }}</span>
+						</div>
+						<h3 class="endpoint code">{{ endpoint.rule }}</h3>
+						{% if endpoint.auth %}
+						<span>&nbsp;🔒</span>
+						{% endif %}
+					</div>
+					<div class="schema-body hidden">
+						<div class="title-and-description">
+							<h3 class="schema-title">{{ endpoint.title }}</h3>
+							{% if endpoint.description %}
+							<p class="schema-description">{{ endpoint.description }}</p>
+							{% endif %}
+						</div>
+						{# TODO: Handle header information again? #}
+						{#{% if schema.additional_headers %}
+						<div class="headers">
+							<h4 class="subtitle">Headers</h4>
+							<ul class="list-block">
+								{% for header in schema.additional_headers %}
+								<li class="header code">{{ header }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+						{% endif %}#}
+						{% if endpoint.auth %}
+						<div class="auth-requirements">
+							<h4 class="subtitle">Authorization</h4>
+							<p class="list-block">{{ endpoint.auth }}</p>
+						</div>
+						{% endif %}
+						{% if endpoint.accepts %}
+						<div class="parameters">
+							<h4 class="subtitle">JSON Parameters</h4>
+							<ul class="list-block">
+								{% for param_title, param in endpoint.schema_base.items() %}
+								<li class="param code">
+									<div>
+										<span>{{ param_title }}</span>
+										<span>({{ param.type }})</span>
+										{% if param_title in endpoint.required %}
+										<span class="required">required</span>
+										{% endif %}
+									</div>
+									{% if param.description %}
+									<p class="param-description">{{ param.description }}</p>
+									{% endif %}
+								</li>
+								{% endfor %}
+							</ul>
+						</div>
+						{% endif %}
+						<div id="{{ endpoint.name }}-responses" class="responses">
+							<h4 class="subtitle">Responses</h4>
+							<div class="tab-headers">
+								{% for code in endpoint.responses %}
+								<div class="tab-header {% if loop.first %}selected{% endif %}" data-schema-id="{{ endpoint.name }}-responses" data-response-code="{{ code }}">{{ code }}</div>
+								{% endfor %}
+							</div>
+							{% for code, response in endpoint.responses.items() %}
+							<div id="{{ endpoint.name }}-responses-{{ code }}-tab" class="tab-content {% if loop.first %}first-tab{% else %}hidden{% endif %}">
+								<div class="response-json"><pre><code class="language-json">{{ response | tojson(indent=8) }}</code></pre>
+								</div>
+							</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	<script src="{{ url_for('static', filename='javascript/prism.js') }}"></script>
+	<script src="{{ url_for('static', filename='javascript/endpoints.js') }}"></script>
+	</body>
+</html>
